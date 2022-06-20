@@ -1,6 +1,7 @@
 use btleplug::api::{Central, Manager as _, Peripheral as _, ScanFilter};
 use btleplug::platform::{Adapter, Manager, Peripheral};
 use clap::Parser;
+use serde_json::json;
 use std::error::Error;
 use std::time::Duration;
 use tokio::time;
@@ -83,7 +84,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         battery: res[7] as u32,
     };
 
-    println!("{}", serde_json::to_string(&data).unwrap());
+    println!("{}", json!(data));
 
     Ok(())
 }
