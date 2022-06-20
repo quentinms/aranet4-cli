@@ -46,13 +46,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     central.start_scan(scan_filter).await?;
     // instead of waiting, you can use central.events() to get a stream which will
     // notify you of new devices, for an example of that see examples/event_driven_discovery.rs
-    time::sleep(Duration::from_secs(10)).await;
+    time::sleep(Duration::from_secs(10)).await; // TODO: config
 
     // find the device we're interested in
     let find_aranet_res = find_aranet_peripheral(&central).await;
 
     if find_aranet_res.is_none() {
-        return Result::Err("Could not find Aranet4 device".into());
+        return Result::Err("could not find any Aranet4 device".into());
     }
 
     let aranet_device = find_aranet_res.unwrap();
@@ -89,6 +89,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 async fn find_aranet_peripheral(central: &Adapter) -> Option<Peripheral> {
+    // TODO: handle multiple devices
     for p in central.peripherals().await.unwrap() {
         let properties = p.properties().await.unwrap().unwrap();
         let name = properties.local_name.unwrap();
