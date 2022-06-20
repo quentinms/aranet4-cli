@@ -13,6 +13,15 @@ struct Cli {
     action: String,
 }
 
+#[derive(Debug, serde::Serialize)]
+struct Data {
+    co2: u32,
+    temperature: f32,
+    pressure: f32,
+    humidity: f32,
+    battery: u32,
+}
+
 const ARANET4_SERVICE_UUID: &str = "f0cd1400-95da-4f4b-9ac8-aa55d312af0c";
 const ARANET4_CHARACTERISTIC_UUID: &str = "f0cd3001-95da-4f4b-9ac8-aa55d312af0c";
 
@@ -65,17 +74,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let res = aranet_device.read(data_char).await?;
 
-    println!("CO2: {:?}", u32::from(res[0]) + u32::from(res[1]) * 256);
-    println!(
-        "Temp: {:?}",
-        (u32::from(res[2]) + u32::from(res[3]) * 256) / 20
-    );
-    println!(
-        "Pressure: {:?}",
-        (u32::from(res[4]) + u32::from(res[5]) * 256) / 10
-    );
-    println!("Humidity: {:?}", u32::from(res[6]));
-    println!("Battery: {:?}", u32::from(res[7]));
+    // Adapted from https://github.com/SAF-Tehnika-Developer/com.aranet4/blob/54ec587f49cdece2236528edf0b871c259eb220c/app.js#L175-L182
+    let data = Data {
+        co2: res[0] as u32 + (res[1] as u32) * 256,
+        temperature: (res[2] as f32 + (res[3] as f32) * 256.0) / 20.0,
+        pressure: (res[4] as f32 + (res[5] as f32) * 256.0) / 10.0,
+        humidity: res[6] as f32,
+        battery: res[7] as u32,
+    };
+
+    println!("{}", serde_json::to_string(&data).unwrap());
 
     Ok(())
 }
