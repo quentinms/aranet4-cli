@@ -92,7 +92,7 @@ async fn find_aranet_peripheral(central: &Adapter) -> Option<Peripheral> {
     for p in central.peripherals().await.unwrap() {
         let properties = p.properties().await.unwrap().unwrap();
         let name = properties.local_name.unwrap();
-        println!("Found {:?}", name);
+        eprintln!("Found {:?}", name);
         if name.contains("Aranet") {
             return Some(p);
         }
