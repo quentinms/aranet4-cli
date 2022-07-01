@@ -16,6 +16,8 @@ struct Cli {
 enum Commands {
     /// Get status of the aranet device
     Status {},
+    // Get info about the aranet device
+    Info {},
 }
 
 #[tokio::main]
@@ -36,6 +38,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some(Commands::Status {}) => {
             get_status(aranet_device).await?;
         }
+        Some(Commands::Info {}) => {
+            get_info(aranet_device).await?;
+        }
         None => {}
     }
 
@@ -46,5 +51,12 @@ async fn get_status(aranet_device: Peripheral) -> Result<(), Box<dyn Error>> {
     let data = aranet::get_aranet_data(&aranet_device).await?;
 
     println!("{}", json!(data));
+    Ok(())
+}
+
+async fn get_info(aranet_device: Peripheral) -> Result<(), Box<dyn Error>> {
+    let info = aranet::get_info(&aranet_device).await?;
+
+    println!("{}", json!(info));
     Ok(())
 }
