@@ -1,19 +1,26 @@
 mod aranet;
-use clap::Parser;
+use btleplug::platform::Peripheral;
+use clap::{Parser, Subcommand};
 use serde_json::json;
 use std::error::Error;
 
-/// Search for a pattern in a file and display the lines that contain it.
+/// Get data from your Aranet4 device.
 #[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
 struct Cli {
-    /// What do you want to do
-    action: String,
+    #[clap(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Get status of the aranet device
+    Status {},
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let _args = Cli::parse();
-    // TODO: do different actions based on args
+    let cli = Cli::parse();
 
     let central = aranet::start_scanning().await?;
 
@@ -25,9 +32,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let aranet_device = find_aranet_res.unwrap();
 
+    match &cli.command {
+        Some(Commands::Status {}) => {
+            get_status(aranet_device).await?;
+        }
+        None => {}
+    }
+
+    Ok(())
+}
+
+async fn get_status(aranet_device: Peripheral) -> Result<(), Box<dyn Error>> {
     let data = aranet::get_aranet_data(&aranet_device).await?;
 
     println!("{}", json!(data));
-
     Ok(())
 }
