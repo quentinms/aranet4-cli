@@ -17,18 +17,6 @@ pub struct Data {
     battery: u32,
 }
 
-impl Data {
-    pub fn new(co2: u32, temperature: f32, pressure: f32, humidity: f32, battery: u32) -> Self {
-        Self {
-            co2,
-            temperature,
-            pressure,
-            humidity,
-            battery,
-        }
-    }
-}
-
 pub async fn start_scanning() -> Result<Adapter, Box<dyn std::error::Error>> {
     let manager = Manager::new().await.unwrap();
 
@@ -81,13 +69,13 @@ pub async fn get_aranet_data(aranet_device: &Peripheral) -> Result<Data, Box<dyn
     let res = aranet_device.read(data_char).await?;
 
     // Adapted from https://github.com/SAF-Tehnika-Developer/com.aranet4/blob/54ec587f49cdece2236528edf0b871c259eb220c/app.js#L175-L182
-    let data = Data::new(
-        res[0] as u32 + (res[1] as u32) * 256,            // CO2
-        (res[2] as f32 + (res[3] as f32) * 256.0) / 20.0, // temperature
-        (res[4] as f32 + (res[5] as f32) * 256.0) / 10.0, // pressure
-        res[6] as f32,                                    // humidity
-        res[7] as u32,                                    // battery
-    );
+    let data = Data {
+        co2: res[0] as u32 + (res[1] as u32) * 256,
+        temperature: (res[2] as f32 + (res[3] as f32) * 256.0) / 20.0,
+        pressure: (res[4] as f32 + (res[5] as f32) * 256.0) / 10.0,
+        humidity: res[6] as f32,
+        battery: res[7] as u32,
+    };
 
     return Ok(data);
 }
