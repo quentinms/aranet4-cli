@@ -1,7 +1,15 @@
 [package]
 name = "aranet4-cli"
 version = "0.1.0"
+authors = ["Quentin Mazars-Simon"]
 edition = "2021"
+license = "MIT"
+description = "Get data from your Aranet4 devices."
+readme = "README.md"
+homepage = "https://github.com/quentinms/aranet4-cli"
+repository = "https://github.com/quentinms/aranet4-cli"
+keywords = ["cli", "aranet4"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

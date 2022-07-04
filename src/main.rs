@@ -4,7 +4,7 @@ use serde_json::json;
 use std::error::Error;
 use std::time;
 
-/// Get data from your Aranet4 device.
+/// Get data from your Aranet4 devices.
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
