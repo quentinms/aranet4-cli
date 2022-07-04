@@ -1,8 +1,8 @@
 mod aranet;
-use btleplug::platform::Peripheral;
 use clap::{Parser, Subcommand};
 use serde_json::json;
 use std::error::Error;
+use std::time;
 
 /// Get data from your Aranet4 device.
 #[derive(Parser)]
@@ -14,49 +14,32 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Get status of the aranet device
-    Status {},
-    // Get info about the aranet device
-    Info {},
+    /// Get aranet devices and their data
+    Get {
+        /// How long to wait for devices to be detected, in seconds
+        #[clap(short, long, default_value = "10")]
+        timeout: u64,
+        /// How many devices to look for
+        #[clap(short, long)]
+        max_devices: Option<usize>,
+    },
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
-    let central = aranet::start_scanning().await?;
-
-    let find_aranet_res = aranet::find_aranet_peripheral(&central).await;
-
-    if find_aranet_res.is_none() {
-        return Result::Err("could not find any Aranet4 device".into());
-    }
-
-    let aranet_device = find_aranet_res.unwrap();
-
     match &cli.command {
-        Some(Commands::Status {}) => {
-            get_status(aranet_device).await?;
-        }
-        Some(Commands::Info {}) => {
-            get_info(aranet_device).await?;
+        Some(Commands::Get {
+            timeout,
+            max_devices,
+        }) => {
+            let devices =
+                aranet::get_devices(*max_devices, time::Duration::from_secs(*timeout)).await?;
+            println!("{}", json!(devices));
         }
         None => {}
     }
 
-    Ok(())
-}
-
-async fn get_status(aranet_device: Peripheral) -> Result<(), Box<dyn Error>> {
-    let data = aranet::get_aranet_data(&aranet_device).await?;
-
-    println!("{}", json!(data));
-    Ok(())
-}
-
-async fn get_info(aranet_device: Peripheral) -> Result<(), Box<dyn Error>> {
-    let info = aranet::get_info(&aranet_device).await?;
-
-    println!("{}", json!(info));
     Ok(())
 }
