@@ -7,3 +7,5 @@ a.k.a. my first rust project by following the [Command line apps in Rust](https:
 ```
 aranet4-cli get --max-devices=1
 ```
+
+Requires firmware v1.2.0 or greater.

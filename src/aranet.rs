@@ -5,7 +5,7 @@ use std::error::Error;
 use std::time;
 use uuid::Uuid;
 
-const ARANET4_SERVICE_UUID: &str = "f0cd1400-95da-4f4b-9ac8-aa55d312af0c";
+const ARANET4_SERVICE_UUID: &str = "0000fce0-0000-1000-8000-00805f9b34fb";
 const ARANET4_CHARACTERISTIC_UUID: &str = "f0cd3001-95da-4f4b-9ac8-aa55d312af0c";
 
 const BLUETOOTH_MODEL_NUMBER_CHARACTERISTIC: &str = "00002a24-0000-1000-8000-00805f9b34fb";
