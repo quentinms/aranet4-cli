@@ -15,7 +15,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 clap = { version = "3.0", features = ["derive"] }
-btleplug = { version = "0.10.4" }
+btleplug = { version = "0.10.4", features = ["serde"] }
 tokio = { version = "1", features = ["full"] }
 uuid = {version = "1.2.2"}
 serde = { version = "1", features = ["derive"] }

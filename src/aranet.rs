@@ -1,4 +1,4 @@
-use btleplug::api::{Central, CentralEvent, Manager as _, Peripheral as _, ScanFilter};
+use btleplug::api::{BDAddr, Central, CentralEvent, Manager as _, Peripheral as _, ScanFilter};
 use btleplug::platform::{Manager, Peripheral};
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -23,6 +23,7 @@ const BLUETOOTH_MANUFACTURER_NAME_CHARACTERISTIC: Uuid =
 #[derive(Default, Debug, serde::Serialize)]
 pub struct Device {
     name: String,
+    address: BDAddr,
     data: Data,
     info: Info,
 }
