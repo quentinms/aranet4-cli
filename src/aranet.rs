@@ -1,7 +1,6 @@
 use btleplug::api::{BDAddr, Central, CentralEvent, Manager as _, Peripheral as _, ScanFilter};
 use btleplug::platform::{Manager, Peripheral};
 use futures::stream::StreamExt;
-use std::error::Error;
 use std::time;
 use uuid::{uuid, Uuid};
 
@@ -50,7 +49,7 @@ pub struct Info {
 pub async fn get_devices(
     max_devices: Option<usize>,
     timeout: time::Duration,
-) -> Result<Vec<Device>, Box<dyn std::error::Error>> {
+) -> anyhow::Result<Vec<Device>> {
     let manager = Manager::new().await.unwrap();
 
     // get the first bluetooth adapter
@@ -94,36 +93,29 @@ pub async fn get_devices(
         }
     }
 
-    return Ok(devices);
+    Ok(devices)
 }
 
-async fn get_device(aranet_device: &Peripheral) -> Result<Device, Box<dyn Error>> {
+async fn get_device(aranet_device: &Peripheral) -> anyhow::Result<Device> {
     aranet_device.connect().await?;
 
     // discover services and characteristics
     aranet_device.discover_services().await?;
 
-    let mut device = Device {
-        ..Default::default()
-    };
-
-    device.name = get_name(aranet_device).await;
-
-    eprintln!("Found {:?}", device.name);
-
-    device.data = get_data(aranet_device).await?;
-    device.info = get_info(aranet_device).await?;
-
-    Ok(device)
+    Ok(Device {
+        name: get_name(aranet_device).await,
+        address: aranet_device.address(),
+        data: get_data(aranet_device).await?,
+        info: get_info(aranet_device).await?,
+    })
 }
 
 async fn get_name(device: &Peripheral) -> String {
     let properties = device.properties().await.unwrap().unwrap();
-    let name = properties.local_name.unwrap();
-    return name;
+    properties.local_name.unwrap()
 }
 
-async fn get_data(device: &Peripheral) -> Result<Data, Box<dyn Error>> {
+async fn get_data(device: &Peripheral) -> anyhow::Result<Data> {
     let chars = device.characteristics();
     let data_char = chars
         .iter()
@@ -133,18 +125,16 @@ async fn get_data(device: &Peripheral) -> Result<Data, Box<dyn Error>> {
     let res = device.read(data_char).await?;
 
     // Adapted from https://github.com/SAF-Tehnika-Developer/com.aranet4/blob/54ec587f49cdece2236528edf0b871c259eb220c/app.js#L175-L182
-    let data = Data {
+    Ok(Data {
         co2: res[0] as u32 + (res[1] as u32) * 256,
         temperature: (res[2] as f32 + (res[3] as f32) * 256.0) / 20.0,
         pressure: (res[4] as f32 + (res[5] as f32) * 256.0) / 10.0,
         humidity: res[6] as f32,
         battery: res[7] as u32,
-    };
-
-    return Ok(data);
+    })
 }
 
-async fn get_info(device: &Peripheral) -> Result<Info, Box<dyn Error>> {
+async fn get_info(device: &Peripheral) -> anyhow::Result<Info> {
     let mut info = Info {
         ..Default::default()
     };
@@ -178,5 +168,5 @@ async fn get_info(device: &Peripheral) -> Result<Info, Box<dyn Error>> {
         }
     }
 
-    return Ok(info);
+    Ok(info)
 }

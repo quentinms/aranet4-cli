@@ -1,7 +1,6 @@
 mod aranet;
 use clap::{Parser, Subcommand};
 use serde_json::json;
-use std::error::Error;
 use std::time;
 
 /// Get data from your Aranet4 devices.
@@ -26,7 +25,7 @@ enum Commands {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
 
     match &cli.command {
