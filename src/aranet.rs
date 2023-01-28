@@ -3,17 +3,22 @@ use btleplug::platform::{Manager, Peripheral};
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::time;
-use uuid::Uuid;
+use uuid::{uuid, Uuid};
 
-const ARANET4_SERVICE_UUID: &str = "0000fce0-0000-1000-8000-00805f9b34fb";
-const ARANET4_CHARACTERISTIC_UUID: &str = "f0cd3001-95da-4f4b-9ac8-aa55d312af0c";
+const ARANET4_SERVICE: Uuid = uuid!("0000fce0-0000-1000-8000-00805f9b34fb");
 
-const BLUETOOTH_MODEL_NUMBER_CHARACTERISTIC: &str = "00002a24-0000-1000-8000-00805f9b34fb";
-const BLUETOOTH_SERIAL_NUMBER_CHARACTERISTIC: &str = "00002a25-0000-1000-8000-00805f9b34fb";
-const BLUETOOTH_FIRMWARE_REVISION_CHARACTERISTIC: &str = "00002a26-0000-1000-8000-00805f9b34fb";
-const BLUETOOTH_HARDWARE_REVISION_CHARACTERISTIC: &str = "00002a27-0000-1000-8000-00805f9b34fb";
-const BLUETOOTH_SOFTWARE_REVISION_CHARACTERISTIC: &str = "00002a28-0000-1000-8000-00805f9b34fb";
-const BLUETOOTH_MANUFACTURER_NAME_CHARACTERISTIC: &str = "00002a29-0000-1000-8000-00805f9b34fb";
+const ARANET4_CHARACTERISTIC: Uuid = uuid!("f0cd3001-95da-4f4b-9ac8-aa55d312af0c");
+
+const BLUETOOTH_MODEL_NUMBER_CHARACTERISTIC: Uuid = uuid!("00002a24-0000-1000-8000-00805f9b34fb");
+const BLUETOOTH_SERIAL_NUMBER_CHARACTERISTIC: Uuid = uuid!("00002a25-0000-1000-8000-00805f9b34fb");
+const BLUETOOTH_FIRMWARE_REVISION_CHARACTERISTIC: Uuid =
+    uuid!("00002a26-0000-1000-8000-00805f9b34fb");
+const BLUETOOTH_HARDWARE_REVISION_CHARACTERISTIC: Uuid =
+    uuid!("00002a27-0000-1000-8000-00805f9b34fb");
+const BLUETOOTH_SOFTWARE_REVISION_CHARACTERISTIC: Uuid =
+    uuid!("00002a28-0000-1000-8000-00805f9b34fb");
+const BLUETOOTH_MANUFACTURER_NAME_CHARACTERISTIC: Uuid =
+    uuid!("00002a29-0000-1000-8000-00805f9b34fb");
 
 #[derive(Default, Debug, serde::Serialize)]
 pub struct Device {
@@ -51,9 +56,8 @@ pub async fn get_devices(
     let adapters = manager.adapters().await?;
     let central = adapters.into_iter().next().unwrap();
 
-    let aranet_service = Uuid::parse_str(ARANET4_SERVICE_UUID).unwrap();
     let scan_filter = ScanFilter {
-        services: vec![aranet_service],
+        services: vec![ARANET4_SERVICE],
     };
     // start scanning for devices
     central.start_scan(scan_filter).await?;
@@ -119,12 +123,10 @@ async fn get_name(device: &Peripheral) -> String {
 }
 
 async fn get_data(device: &Peripheral) -> Result<Data, Box<dyn Error>> {
-    let aranet4_characteristic: Uuid = Uuid::parse_str(ARANET4_CHARACTERISTIC_UUID).unwrap();
-
     let chars = device.characteristics();
     let data_char = chars
         .iter()
-        .find(|c| c.uuid == aranet4_characteristic)
+        .find(|c| c.uuid == ARANET4_CHARACTERISTIC)
         .unwrap();
 
     let res = device.read(data_char).await?;
@@ -146,7 +148,7 @@ async fn get_info(device: &Peripheral) -> Result<Info, Box<dyn Error>> {
         ..Default::default()
     };
     for characteristic in device.characteristics() {
-        match characteristic.uuid.to_string().as_str() {
+        match characteristic.uuid {
             BLUETOOTH_MODEL_NUMBER_CHARACTERISTIC => {
                 let res = device.read(&characteristic).await?;
                 info.model_number = Some(String::from_utf8_lossy(&res).to_string());
