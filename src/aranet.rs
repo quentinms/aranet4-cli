@@ -65,33 +65,31 @@ pub async fn get_devices(
     // Based on https://github.com/deviceplug/btleplug/blob/21947d6f6e23466b6d06e523b1ffa48bb5a227b3/examples/event_driven_discovery.rs
     let mut events = central.events().await?;
 
-    let start = time::Instant::now();
-    let mut devices: Vec<Device> = Vec::new();
+    let mut devices = Vec::new();
+    if !max_devices.map(|m| devices.len() < m).unwrap_or(true) {
+        // In case we are requested to find 0 devices, return early.
+        return Ok(devices);
+    }
 
-    loop {
-        // I don't really like this but I could't figure out a better way to exit early
-        match events.next().await {
-            Some(CentralEvent::DeviceDiscovered(id))
-                if time::Instant::now().duration_since(start) <= time::Duration::from_secs(10)
-                    && max_devices.map(|max| devices.len() < max).unwrap_or(true) =>
-            {
-                let aranet_device = central.peripheral(&id).await.unwrap();
-
-                let device = get_device(&aranet_device).await?;
-
-                devices.push(device);
+    let timeout_instant = time::Instant::now() + timeout;
+    while let Ok(Some(event)) = tokio::time::timeout_at(timeout_instant.into(), events.next()).await
+    {
+        if let CentralEvent::DeviceDiscovered(id) = event {
+            let device = central.peripheral(&id).await.unwrap();
+            let services = get_services(&device).await?;
+            // The ScanFilter is only best effort and some implementation might return devices that
+            // do not offer the requested service.
+            if !services.contains(&ARANET4_SERVICE) {
+                continue;
             }
-            Some(_)
-                if time::Instant::now().duration_since(start) <= timeout
-                    && max_devices.map(|max| devices.len() < max).unwrap_or(true) =>
-            {
-                // Do nothing for other events while we can still look for devices
-            }
-            _ => {
-                break;
+            devices.push(get_device(&device).await?);
+
+            if !max_devices.map(|m| devices.len() < m).unwrap_or(true) {
+                return Ok(devices);
             }
         }
     }
+    central.stop_scan().await?;
 
     Ok(devices)
 }
@@ -103,16 +101,21 @@ async fn get_device(aranet_device: &Peripheral) -> anyhow::Result<Device> {
     aranet_device.discover_services().await?;
 
     Ok(Device {
-        name: get_name(aranet_device).await,
+        name: get_name(aranet_device).await?,
         address: aranet_device.address(),
         data: get_data(aranet_device).await?,
         info: get_info(aranet_device).await?,
     })
 }
 
-async fn get_name(device: &Peripheral) -> String {
-    let properties = device.properties().await.unwrap().unwrap();
-    properties.local_name.unwrap()
+async fn get_name(device: &Peripheral) -> anyhow::Result<String> {
+    let properties = device.properties().await?.unwrap();
+    Ok(properties.local_name.unwrap())
+}
+
+async fn get_services(device: &Peripheral) -> anyhow::Result<Vec<Uuid>> {
+    let properties = device.properties().await?.unwrap();
+    Ok(properties.services)
 }
 
 async fn get_data(device: &Peripheral) -> anyhow::Result<Data> {
